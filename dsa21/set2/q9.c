@@ -1,117 +1,92 @@
 #include <stdio.h>
-#define MAX_SIZE 5
+#include <stdlib.h>
 
-struct CircularQueue {
-int data[MAX_SIZE];
-int front;
-int rear;
-int count;
-};
-void initializeQueue(struct CircularQueue* queue) {
-queue->front = -1;
-queue->rear = -1;
-queue->count = 0;
-}
-int isQueueEmpty(struct CircularQueue* queue) {
-return queue->count == 0;
-}
-int isQueueFull(struct CircularQueue* queue) {
-return queue->count == MAX_SIZE;
-}
-void enqueue(struct CircularQueue* queue, int value) {
-if (isQueueFull(queue)) {
-printf("Queue is full. Cannot enqueue.\n");
-return;
-}
-if (queue->front == -1)
-queue->front = 0;
-queue->rear = (queue->rear + 1) % MAX_SIZE;
-queue->data[queue->rear] = value;
-queue->count++;
-printf("%d enqueued.\n", value);
-}
-int dequeue(struct CircularQueue* queue) {
-if (isQueueEmpty(queue)) {
-printf("Queue is empty. Cannot dequeue.\n");
-return -1;
-}
-int value = queue->data[queue->front];
-queue->front = (queue->front + 1) % MAX_SIZE;
-queue->count--;
+typedef struct stack {
+  int top, size;
+  int arr[100];
+} stack;
 
-return value;
+stack *createStack(int s) {
+  stack *newStack = (stack *)malloc(sizeof(stack));
+  newStack->top = -1;
+  newStack->size = s;
+  return newStack;
 }
-int queueSize(struct CircularQueue* queue) {
-return queue->count;
+
+void push(stack *s, int key) {
+  if (s->top == s->size - 1) {
+    printf("Stack full. Can't enter more elements.\n");
+    return;
+  }
+
+  s->arr[++s->top] = key;
 }
-void checkConditions(struct CircularQueue* queue) {
-if (isQueueEmpty(queue)) {
-printf("Underflow condition: Queue is empty.\n");
-} else if (isQueueFull(queue)) {
-printf("Overflow condition: Queue is full.\n");
-} else {
-printf("No overflow or underflow condition.\n");
+
+int pop(stack *s) {
+  if (s->top == -1) {
+    printf("Stack is empty. Nothing to pop.\n");
+    return -1;
+  }
+  return s->arr[s->top--];
 }
+
+typedef struct queue {
+  struct stack *s1, *s2;
+} queue;
+
+queue *createQueue(int s) {
+  queue *newQueue = (queue *)malloc(sizeof(queue));
+  newQueue->s1 = createStack(s);
+  newQueue->s2 = createStack(s);
+  return newQueue;
 }
-void displayQueue(struct CircularQueue* queue) {
-if (isQueueEmpty(queue)) {
-printf("Queue is empty.\n");
-return;
+
+void enqueue(queue *q, int key) {
+  while (q->s1->top > -1) {
+    push(q->s2, pop(q->s1));
+  }
+  push(q->s1, key);
+  while (q->s2->top > -1) {
+    push(q->s1, pop(q->s2));
+  }
 }
-printf("Queue elements: ");
-int i = queue->front;
-int count = queue->count;
-while (count > 0) {
-printf("%d ", queue->data[i]);
-i = (i + 1) % MAX_SIZE;
-count--;
+
+int dequeue(queue *q) { return pop(q->s1); }
+
+void printQueue(queue *q) {
+  int i;
+  printf("Queue: ");
+  for (i = 0; i <= q->s1->top; i++) {
+    printf("%d ", q->s1->arr[i]);
+  }
+  printf("\n");
 }
-printf("\n");
-}
+
 int main() {
-struct CircularQueue circularQueue;
-initializeQueue(&circularQueue);
-int choice, value;
-do {
-printf("\nCircular Queue Operations:\n");
-printf("1. Enqueue\n");
-printf("2. Dequeue\n");
-printf("3. Check Number of Elements\n");
-printf("4. Check Overflow and Underflow Conditions\n");
+  int s, choice, key;
+  printf("Enter maximum size of queue: ");
+  scanf("%d", &s);
+  queue *q = createQueue(s);
 
-printf("5. Display Queue\n");
-printf("6. Quit\n");
-printf("Enter your choice: ");
-scanf("%d", &choice);
-switch (choice) {
-case 1:
-printf("Enter value to enqueue: ");
-scanf("%d", &value);
-enqueue(&circularQueue, value);
-break;
-case 2:
-value = dequeue(&circularQueue);
-if (value != -1) {
-printf("%d dequeued.\n", value);
-}
-break;
-case 3:
-printf("Number of elements in the queue: %d\n",
-
-queueSize(&circularQueue));
-break;
-case 4:
-checkConditions(&circularQueue);
-break;
-case 5:
-displayQueue(&circularQueue);
-break;
-case 6:
-printf("Exiting program.\n");
-break;
-default:
-printf("Invalid choice. Please select a valid option.\n");
-}
-} while (choice != 6);
-return 0;
+  while (1) {
+    printf(
+        "\nQueue Operations:\n1.Enqueue\n2.Dequeue\n3.Display queue\n4.Exit\n");
+    scanf("%d", &choice);
+    switch (choice) {
+    case 1:
+      printf("Enter value to be enqueued: ");
+      scanf("%d", &key);
+      enqueue(q, key);
+      break;
+    case 2:
+      printf("Dequeued element: %d\n", dequeue(q));
+      break;
+    case 3:
+      printQueue(q);
+      break;
+    default:
+      return 0;
+    }
+  }
+  return 0;
 }
